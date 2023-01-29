@@ -57,9 +57,45 @@ body {
 }
 
 #messages>li {
+    position: relative;
     padding: 0.5rem 1rem;
     color: #fff;
     max-height: calc(100vh - 3rem);
+    width: calc(80vw - 32px);
+    max-width: calc(80vw - 32px);
+    overflow-wrap: break-word;
+}
+
+#messages>li>img,
+#messages>li>video {
+    position: relative;
+    top: 0.5rem;
+    max-width: calc(80vw - 32px);
+}
+
+#messages>li:hover {
+    background: #32343a;
+}
+
+#messages>li:hover .icons {
+    visibility: visible;
+}
+
+#messages>li>svg {
+    visibility: hidden;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    color: #dd4344;
+}
+
+#messages>li>svg:nth-child(2) {
+    color: #fff;
+    right: 2.2rem;
+}
+
+#messages>li>svg:hover {
+    filter: brightness(80%);
 }
 
 #chat {

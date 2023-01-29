@@ -19,8 +19,16 @@ class Guild {
         this.sortOnlineUsers();
     }
 
-    pushMessage(msg) {
-        this.messageHistory.push(msg);
+    pushMessage(msgObject) {
+        this.messageHistory.push(msgObject);
+    }
+
+    deleteMessage(messageId) {
+        this.messageHistory = this.messageHistory.filter(msgObject => msgObject.messageId !== messageId);
+    }
+
+    getMessageObjectById(messageId) {
+        return this.messageHistory.filter(msgObject => msgObject.messageId === messageId)[0];
     }
 
     getOnlineUsers() {

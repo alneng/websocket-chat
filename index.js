@@ -7,8 +7,17 @@ const { Server } = require('socket.io');
 const io = new Server(server);
 
 const { Guild } = require('./Guild.js');
-const localizedGuild = new Guild("main")
+const localizedGuild = new Guild("main");
 
+function generateRandomString(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
 
 // make static files available at ./file.extension
 app.use(express.static('public'));
@@ -39,11 +48,11 @@ io.on('connection', (socket) => {
 
     socket.on('pollOnlineUsers', () => {
         io.emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
-    })
+    });
 
-    socket.on('messageCreate', (msg) => {
-        if (msg.substring(0, 5) === '/nick') {
-            newUsername = msg.substring(6, msg.length);
+    socket.on('commandCreate', (command) => {
+        if (command.split(' ')[0] === '/nick' && command.split(' ')[1] && command.split(' ')[1].length > 0) {
+            newUsername = command.split(' ')[1];
 
             localizedGuild.userDisconnect(_user);
             console.log(`[${new Date().toLocaleTimeString()}] ${_user} changed their username to ${newUsername}`);
@@ -54,24 +63,53 @@ io.on('connection', (socket) => {
             socket.emit('usernameChange', _user);
             io.emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
         }
-        else if (msg === '/purge') {
+        else if (command === '/purge') {
             localizedGuild.clearMessageHistory();
             io.emit('clearMessageHistory');
             console.log(`[${new Date().toLocaleTimeString()}] ${_user} cleared the chat history`);
         }
-        else if (msg === '/forcerestart') {
+        else if (command === '/forcerestart') {
             io.emit('forceUpdateClient');
             console.log(`[${new Date().toLocaleTimeString()}] ${_user} force restarted clients`);
         }
-        else if (msg === '/cmds') {
-            var messageContent = `Automated Message [${new Date().toLocaleTimeString()}]<br>Commands: "/nick [new_username]"`
-            io.emit('messageCreate', messageContent);
+        else if (command === '/cmds') {
+            var messageObject = {
+                'messageId': 'CMD' + generateRandomString(13),
+                'author': "Automated Message",
+                'dateTime': new Date().toLocaleString(),
+                'content': 'Commands: <br>/nick [new_username]<br>/img [image_link]',
+            };
+            io.emit('messageCreate', messageObject);
         }
-        else {
-            var messageContent = `${_user} [${new Date().toLocaleTimeString()}]<br>${msg}`
-            localizedGuild.pushMessage(messageContent);
-            io.emit('messageCreate', messageContent);
+        else if (command.split(" ")[0] === '/del' && command.split(' ')[1] && command.split(' ')[1].length > 0) {
+            messageId = command.split(' ')[1];
+            if (localizedGuild.getMessageObjectById(messageId)['author'] === _user) {
+                localizedGuild.deleteMessage(messageId);
+                io.emit('messageDelete', messageId);
+            }
         }
+        else if (command.split(" ")[0] === '/img' && command.split(' ')[1] && command.split(' ')[1].length > 0) {
+            imgLink = command.split(' ')[1];
+            var messageObject = {
+                'messageId': generateRandomString(16),
+                'author': _user,
+                'dateTime': new Date().toLocaleString(),
+                'content': `<img src="${imgLink}" loading="lazy">`,
+            };
+            localizedGuild.pushMessage(messageObject);
+            io.emit('messageCreate', messageObject);
+        }
+    });
+
+    socket.on('messageCreate', (msg) => {
+        var messageObject = {
+            'messageId': generateRandomString(16),
+            'author': _user,
+            'dateTime': new Date().toLocaleString(),
+            'content': msg,
+        };
+        localizedGuild.pushMessage(messageObject);
+        io.emit('messageCreate', messageObject);
     });
 
     socket.on('disconnect', () => {
