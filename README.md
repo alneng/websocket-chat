@@ -11,6 +11,10 @@ Theme inspired by [Discord](http://discord.com)
 
 ## Slash Commands
 - `/nick [new_username]`: Changes your username to a new username
-- `/purge`: Clears global chat history
+- `/img [image_link]`: Displays an image from the inputted link
+- `/purge`: Clears global chat history [WARNING: This is irreversible]
 - `/forcerestart`: Forces all connected clients to restart (can be used for server & client updates)
 - `/cmds`: Sends an automated message in the chat with a list of public commands
+
+## Have a Feature to Add?
+- Open a pull request into `develop`!

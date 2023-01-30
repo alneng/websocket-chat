@@ -24,14 +24,14 @@ function setCookie(name, value, days) {
     document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
-if (getCookie("uuid")) var _uuid = getCookie("uuid")
+if (getCookie("uuid")) var _uuid = getCookie("uuid");
 else {
     var _uuid = generateRandomString(8);
     setCookie("uuid", _uuid);
 }
 
 var socket = io();
-socket.emit('connectToSocket', _uuid)
+socket.emit('connectToSocket', _uuid);
 
 var messages = document.getElementById('messages');
 var onlineUsers = document.getElementById('online-user-table')
@@ -42,10 +42,15 @@ audio.src = './noti-sound';
 audio.type = 'audio/mpeg';
 audio.volume = 0.5;
 
+let trashIcon = document.querySelector('#trash-icon').cloneNode(true);
+let editIcon = document.querySelector('#edit-icon').cloneNode(true);
+document.getElementById('temp').remove();
+
 form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
-        socket.emit('messageCreate', input.value);
+        if (input.value.substring(0, 1) === '/') socket.emit('commandCreate', input.value);
+        else socket.emit('messageCreate', input.value);
         input.value = '';
     }
 });
@@ -57,15 +62,34 @@ socket.on('pollOnlineUsers', function (list) {
         if (user === _uuid) item.textContent = user + " (you)";
         else item.textContent = user;
         onlineUsers.appendChild(item);
-    })
+    });
 });
 
-socket.on('messageCreate', function (msg) {
+socket.on('messageCreate', function (messageObject) {
     if (document.hidden) audio.play();
     var item = document.createElement('li');
-    item.innerHTML = msg;
+    item.innerHTML += `${messageObject['author']} [${messageObject['dateTime']}]<br>${messageObject['content']}`;
+    item.dataset.messageId = messageObject['messageId'];
+    if (messageObject['author'] === _uuid) {
+        uniqueTrashIcon = trashIcon.cloneNode(true);
+        item.insertBefore(uniqueTrashIcon, item.firstChild);
+        item.firstChild.addEventListener('click', () => {
+            socket.emit('commandCreate', `/del ${messageObject['messageId']}`);
+        });
+        // item.appendChild(editIcon);
+    }
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
+});
+
+socket.on('messageEdit', (messageId, author, timeCreated, newContent) => {
+    var item = document.querySelector(`[data-message-id="${messageId}"]`);
+    item.innerHTML = `${author} [${timeCreated}] (edited)<br>${newContent}`;
+});
+
+socket.on('messageDelete', (messageId) => {
+    var item = document.querySelector(`[data-message-id="${messageId}"]`);
+    item.remove();
 });
 
 socket.on('usernameChange', function (newName) {
@@ -79,4 +103,4 @@ socket.on('clearMessageHistory', () => {
 
 socket.on('forceUpdateClient', () => {
     window.location.href = '/';
-})
+});
