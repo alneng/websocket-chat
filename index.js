@@ -41,6 +41,7 @@ io.on('connection', (socket) => {
     socket.on('connectToSocket', (username) => {
         _user = username;
         localizedGuild.userConnect(_user);
+        if (localizedGuild.isUniqueUser(_user)) localizedGuild.addUniqueUser(_user);
         io.emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
 
         console.log(`[${new Date().toLocaleTimeString()}] ${username} connected`);
@@ -53,8 +54,10 @@ io.on('connection', (socket) => {
     socket.on('commandCreate', (command) => {
         if (command.split(' ')[0] === '/nick' && command.split(' ')[1] && command.split(' ')[1].length > 0) {
             newUsername = command.split(' ')[1];
+            if (!localizedGuild.isUniqueUser(newUsername)) newUsername = generateRandomString(16);
 
             localizedGuild.userDisconnect(_user);
+            localizedGuild.removeUniqueUser(_user);
             console.log(`[${new Date().toLocaleTimeString()}] ${_user} changed their username to ${newUsername}`);
 
             _user = newUsername;

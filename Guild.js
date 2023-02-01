@@ -3,6 +3,7 @@ class Guild {
         this.serverName = serverName;
         this.onlineUsers = [];
         this.messageHistory = [];
+        this.userHistory = [];
     }
 
     sortOnlineUsers() {
@@ -10,8 +11,10 @@ class Guild {
     }
 
     userConnect(name) {
-        this.onlineUsers.push(name);
-        this.sortOnlineUsers();
+        if (this.onlineUsers.filter(user => user === name).length == 0) {
+            this.onlineUsers.push(name);
+            this.sortOnlineUsers();
+        }
     }
 
     userDisconnect(name) {
@@ -27,12 +30,28 @@ class Guild {
         this.messageHistory = this.messageHistory.filter(msgObject => msgObject.messageId !== messageId);
     }
 
+    addUniqueUser(uuid) {
+        this.userHistory.push(uuid);
+    }
+
+    removeUniqueUser(uuid) {
+        this.userHistory = this.userHistory.filter(user => user !== uuid);
+    }
+
+    isUniqueUser(uuid) {
+        return this.userHistory.filter(user => user === uuid).length == 0;
+    }
+
     getMessageObjectById(messageId) {
         return this.messageHistory.filter(msgObject => msgObject.messageId === messageId)[0];
     }
 
     getOnlineUsers() {
         return this.onlineUsers;
+    }
+
+    getUniqueUsers() {
+        return this.userHistory;
     }
 
     getMessageHistory() {
