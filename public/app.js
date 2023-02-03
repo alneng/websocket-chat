@@ -52,8 +52,72 @@ form.addEventListener('submit', function (e) {
         if (input.value.substring(0, 1) === '/') socket.emit('commandCreate', input.value);
         else socket.emit('messageCreate', input.value);
         input.value = '';
+        socket.emit('statusUpdate', {
+            'id': 'typingUserStatusUpdate',
+            'objectPayload': {
+                'isTyping': false
+            }
+        });
     }
 });
+
+let formInput = document.getElementById('input');
+let timeout;
+formInput.addEventListener('input', () => {
+    if (formInput.value === '') {
+        socket.emit('statusUpdate', {
+            'id': 'typingUserStatusUpdate',
+            'objectPayload': {
+                'isTyping': false
+            }
+        });
+    } else {
+        socket.emit('statusUpdate', {
+            'id': 'typingUserStatusUpdate',
+            'objectPayload': {
+                'isTyping': true
+            }
+        });
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            socket.emit('statusUpdate', {
+                'id': 'typingUserStatusUpdate',
+                'objectPayload': {
+                    'isTyping': false
+                }
+            });
+        }, 7500);
+    }
+});
+
+socket.on('statusUpdate', (statusObject) => {
+    /*
+    statusObject = {
+        'id': 'typingUserStatusUpdate',
+        'objectPayload': {}
+    }
+    */
+    if (statusObject['id'] === 'typingUserStatusUpdate') {
+        if (statusObject['objectPayload']['users'].length > 0) {
+            document.getElementById('typing-users').innerHTML = '';
+
+            var plurality = (statusObject['objectPayload'].length > 1 ? 'are' : 'is');
+            statusObject['objectPayload']['users'].forEach((user) => {
+                document.getElementById('typing-users').innerHTML += `${user}, `
+            });
+            var users = document.getElementById('typing-users').innerHTML;
+            document.getElementById('typing-users').innerHTML = users.substring(0, users.length - 2);
+            document.getElementById('plurality').innerHTML = plurality;
+            document.getElementById('typing-user-wrapper').style = 'visibility: visible;';
+        } else {
+            document.getElementById('typing-user-wrapper').style = 'visibility: hidden;';
+        }
+    } else if (statusObject['id'] === 'updateGuildName') {
+        [...document.getElementsByClassName('room-name')].forEach((elem) => {
+            elem.innerHTML = statusObject['objectPayload']['guildName'];
+        });
+    }
+})
 
 socket.on('pollOnlineUsers', function (list) {
     while (onlineUsers.firstChild) onlineUsers.firstChild.remove();
