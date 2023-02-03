@@ -7,7 +7,7 @@ const { Server } = require('socket.io');
 const io = new Server(server);
 
 const { Guild } = require('./Guild.js');
-const localizedGuild = new Guild("main");
+const allGuilds = {};
 
 function generateRandomString(length) {
     let result = '';
@@ -33,7 +33,8 @@ function sanitizeString(string) {
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    if (!req.query['joinCode']) res.sendFile(__dirname + '/home.html');
+    else res.sendFile(__dirname + '/index.html');
 });
 
 app.get('/noti-sound', (req, res) => {
@@ -42,8 +43,19 @@ app.get('/noti-sound', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+    const joinCode = new URLSearchParams(new URL(socket.handshake.headers.referer).search).get('joinCode');
+    if (!allGuilds[joinCode]) allGuilds[joinCode] = new Guild(joinCode);
+    const localizedGuild = allGuilds[joinCode];
+    socket.join(joinCode);
+
     let _user = '';
 
+    socket.emit('statusUpdate', {
+        'id': 'updateGuildName',
+        'objectPayload': {
+            'guildName': localizedGuild.getServerName()
+        }
+    });
     localizedGuild.getMessageHistory().forEach((msg) => {
         socket.emit('messageCreate', msg);
     });
@@ -52,13 +64,13 @@ io.on('connection', (socket) => {
         _user = username;
         localizedGuild.userConnect(_user);
         if (localizedGuild.isUniqueUser(_user)) localizedGuild.addUniqueUser(_user);
-        io.emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
+        io.to(joinCode).emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
 
-        console.log(`[${new Date().toLocaleTimeString()}] ${username} connected`);
+        console.log(`[${new Date().toLocaleTimeString()}] ${username} connected to room "${joinCode}"`);
     });
 
     socket.on('pollOnlineUsers', () => {
-        io.emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
+        io.to(joinCode).emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
     });
 
     socket.on('commandCreate', (command) => {
@@ -75,15 +87,15 @@ io.on('connection', (socket) => {
             localizedGuild.userConnect(_user);
 
             socket.emit('usernameChange', _user);
-            io.emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
+            io.to(joinCode).emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
         }
         else if (command === '/purge') {
             localizedGuild.clearMessageHistory();
-            io.emit('clearMessageHistory');
+            io.to(joinCode).emit('clearMessageHistory');
             console.log(`[${new Date().toLocaleTimeString()}] ${_user} cleared the chat history`);
         }
         else if (command === '/forcerestart') {
-            io.emit('forceUpdateClient');
+            io.to(joinCode).emit('forceUpdateClient');
             console.log(`[${new Date().toLocaleTimeString()}] ${_user} force restarted clients`);
         }
         else if (command === '/cmds') {
@@ -93,13 +105,13 @@ io.on('connection', (socket) => {
                 'dateTime': new Date().toLocaleString(),
                 'content': 'Commands: <br>/nick [new_username]: max 20 characters<br>/img [image_link]',
             };
-            io.emit('messageCreate', messageObject);
+            io.to(joinCode).emit('messageCreate', messageObject);
         }
         else if (command.split(" ")[0] === '/del' && command.split(' ')[1] && command.split(' ')[1].length > 0) {
             messageId = command.split(' ')[1];
             if (localizedGuild.getMessageObjectById(messageId)['author'] === _user) {
                 localizedGuild.deleteMessage(messageId);
-                io.emit('messageDelete', messageId);
+                io.to(joinCode).emit('messageDelete', messageId);
             }
         }
         else if (command.split(" ")[0] === '/img' && command.split(' ')[1] && command.split(' ')[1].length > 0) {
@@ -111,7 +123,7 @@ io.on('connection', (socket) => {
                 'content': `<img src="${imgLink}" loading="lazy">`,
             };
             localizedGuild.pushMessage(messageObject);
-            io.emit('messageCreate', messageObject);
+            io.to(joinCode).emit('messageCreate', messageObject);
         }
     });
 
@@ -125,7 +137,7 @@ io.on('connection', (socket) => {
         if (statusObject['id'] === 'typingUserStatusUpdate') {
             if (statusObject['objectPayload']['isTyping']) localizedGuild.addTypingUser(_user);
             else localizedGuild.removeTypingUser(_user);
-            io.emit('statusUpdate', {
+            io.to(joinCode).emit('statusUpdate', {
                 'id': 'typingUserStatusUpdate',
                 'objectPayload': {
                     'users': localizedGuild.getTypingUsers()
@@ -142,14 +154,16 @@ io.on('connection', (socket) => {
             'content': replaceLinks(sanitizeString(msg)),
         };
         localizedGuild.pushMessage(messageObject);
-        io.emit('messageCreate', messageObject);
+        io.to(joinCode).emit('messageCreate', messageObject);
     });
 
     socket.on('disconnect', () => {
         localizedGuild.userDisconnect(_user)
-        socket.broadcast.emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
+        socket.broadcast.in(joinCode).emit('pollOnlineUsers', localizedGuild.getOnlineUsers());
 
-        console.log(`[${new Date().toLocaleTimeString()}] ${_user} disconnected`);
+        console.log(`[${new Date().toLocaleTimeString()}] ${_user} disconnected from room "${joinCode}"`);
+
+        socket.leave(joinCode);
     });
 });
 

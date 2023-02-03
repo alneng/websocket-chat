@@ -3,6 +3,24 @@ body {
     padding-bottom: 3rem;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #37393e;
+    color: #fff;
+}
+
+#chat-title {
+    margin: 16px 16px;
+    padding: 0;
+    font-weight: normal;
+    width: calc(80vw - 32px);
+    border-bottom: 1px solid #42474c;
+}
+
+#chat-title>h1 {
+    margin: 8px 0px 4px;
+}
+
+#chat-title>h4 {
+    margin: 8px 0;
+    font-weight: normal;
 }
 
 #form {
@@ -21,7 +39,6 @@ body {
 }
 
 #typing-user-block {
-    color: #fff;
     font-size: 14px;
     position: fixed;
     bottom: -1.6rem;
@@ -72,7 +89,6 @@ body {
 #messages>li {
     position: relative;
     padding: 0.5rem 1rem;
-    color: #fff;
     max-height: calc(100vh - 3rem - 58px);
     width: calc(80vw - 32px);
     max-width: calc(80vw - 32px);
@@ -138,7 +154,6 @@ a:hover {
 #online-tab {
     margin: 0;
     padding: 0.5rem 1rem;
-    color: #fff;
 }
 
 #online-user-table {

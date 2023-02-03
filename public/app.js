@@ -112,6 +112,10 @@ socket.on('statusUpdate', (statusObject) => {
         } else {
             document.getElementById('typing-user-wrapper').style = 'visibility: hidden;';
         }
+    } else if (statusObject['id'] === 'updateGuildName') {
+        [...document.getElementsByClassName('room-name')].forEach((elem) => {
+            elem.innerHTML = statusObject['objectPayload']['guildName'];
+        });
     }
 })
 

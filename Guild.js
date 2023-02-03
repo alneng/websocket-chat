@@ -74,6 +74,10 @@ class Guild {
         return this.messageHistory;
     }
 
+    getServerName() {
+        return this.serverName;
+    }
+
     clearMessageHistory() {
         this.messageHistory = [];
     }
