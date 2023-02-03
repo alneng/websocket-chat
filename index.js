@@ -54,7 +54,8 @@ io.on('connection', (socket) => {
     socket.on('commandCreate', (command) => {
         if (command.split(' ')[0] === '/nick' && command.split(' ')[1] && command.split(' ')[1].length > 0) {
             newUsername = command.split(' ')[1];
-            if (!localizedGuild.isUniqueUser(newUsername)) newUsername = generateRandomString(16);
+            localizedGuild.removeTypingUser(_user);
+            if (!localizedGuild.isUniqueUser(newUsername) || newUsername.length > 20) newUsername = generateRandomString(16);
 
             localizedGuild.userDisconnect(_user);
             localizedGuild.removeUniqueUser(_user);
@@ -80,7 +81,7 @@ io.on('connection', (socket) => {
                 'messageId': 'CMD' + generateRandomString(13),
                 'author': "Automated Message",
                 'dateTime': new Date().toLocaleString(),
-                'content': 'Commands: <br>/nick [new_username]<br>/img [image_link]',
+                'content': 'Commands: <br>/nick [new_username]: max 20 characters<br>/img [image_link]',
             };
             io.emit('messageCreate', messageObject);
         }
@@ -101,6 +102,25 @@ io.on('connection', (socket) => {
             };
             localizedGuild.pushMessage(messageObject);
             io.emit('messageCreate', messageObject);
+        }
+    });
+
+    socket.on('statusUpdate', (statusObject) => {
+        /*
+        statusObject = {
+            'id': 'typingUserStatusUpdate',
+            'objectPayload': {}
+        }
+        */
+        if (statusObject['id'] === 'typingUserStatusUpdate') {
+            if (statusObject['objectPayload']['isTyping']) localizedGuild.addTypingUser(_user);
+            else localizedGuild.removeTypingUser(_user);
+            io.emit('statusUpdate', {
+                'id': 'typingUserStatusUpdate',
+                'objectPayload': {
+                    'users': localizedGuild.getTypingUsers()
+                }
+            });
         }
     });
 

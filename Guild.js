@@ -4,6 +4,7 @@ class Guild {
         this.onlineUsers = [];
         this.messageHistory = [];
         this.userHistory = [];
+        this.currentlyTypingUsers = [];
     }
 
     sortOnlineUsers() {
@@ -38,8 +39,23 @@ class Guild {
         this.userHistory = this.userHistory.filter(user => user !== uuid);
     }
 
+    addTypingUser(uuid) {
+        this.currentlyTypingUsers.push(uuid);
+        this.currentlyTypingUsers = Array.from(new Set(this.currentlyTypingUsers));
+        this.currentlyTypingUsers.sort();
+    }
+
+    removeTypingUser(uuid) {
+        this.currentlyTypingUsers = this.currentlyTypingUsers.filter(user => user !== uuid);
+        this.currentlyTypingUsers.sort();
+    }
+
     isUniqueUser(uuid) {
         return this.userHistory.filter(user => user === uuid).length == 0;
+    }
+
+    getTypingUsers() {
+        return this.currentlyTypingUsers;
     }
 
     getMessageObjectById(messageId) {
