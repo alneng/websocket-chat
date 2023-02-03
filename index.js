@@ -19,6 +19,16 @@ function generateRandomString(length) {
     return result;
 }
 
+function replaceLinks(string) {
+    return string.replace(/https?:\/\/[^\s]+/g, (match) => {
+        return `<a href="${match}" target="_blank" rel="noopener">${match}</a>`;
+    });
+}
+
+function sanitizeString(string) {
+    return string.replace(/<[^>]*>/g, '');
+}
+
 // make static files available at ./file.extension
 app.use(express.static('public'));
 
@@ -129,7 +139,7 @@ io.on('connection', (socket) => {
             'messageId': generateRandomString(16),
             'author': _user,
             'dateTime': new Date().toLocaleString(),
-            'content': msg,
+            'content': replaceLinks(sanitizeString(msg)),
         };
         localizedGuild.pushMessage(messageObject);
         io.emit('messageCreate', messageObject);

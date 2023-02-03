@@ -79,6 +79,16 @@ body {
     overflow-wrap: break-word;
 }
 
+a:link,
+a:visited {
+    color: #1999dc;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 #messages>li>img,
 #messages>li>video {
     position: relative;
